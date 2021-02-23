@@ -367,11 +367,12 @@
 ; 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-expresion [expr amb]
-  ;(prn "ENTRA A CALCULAR EXPRESION:::: ")                   ;HOOMERO
-  (prn "Entrada a Preprocesar-exp, expresion " expr " con ambiente : " amb) ;HOMERO
+  ;(prn "ENTRADA A CALCULAR EXPRESION:::: " expr " ::::::::::: ")                   ;HOOMERO
+  ;(prn "Entrada a Preprocesar-exp, expresion " expr " con ambiente : " amb) ;HOMERO
   (prn " Salida Preprocesar-Exp: " (preprocesar-expresion expr amb) " --- ")  ;;homero
   (prn " Salida Desambiguar: " (desambiguar (preprocesar-expresion expr amb)) " --- " ) ;homero
   (prn "Salida shunting-yard: " (shunting-yard (desambiguar (preprocesar-expresion expr amb))) " --- ") ;homero
+  ;(prn " TIPO Salida shunting-yard: " (type (shunting-yard (desambiguar (preprocesar-expresion expr amb)))) " --- ") ;homero
   ;(print " esto entra a calcular rpn: " (shunting-yard (desambiguar (preprocesar-expresion expr amb))) "*-*-*-") ;homero
   (calcular-rpn (shunting-yard (desambiguar (preprocesar-expresion expr amb))) (amb 1))
   )
@@ -450,7 +451,7 @@
 ; linea indicada
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-rpn [tokens nro-linea]
-  (prn " tokens en calcular rpn: " tokens)                  ;homero
+  ;(prn " tokens en calcular rpn: " tokens)                  ;homero
   ;(prn "aridad token 1 "    (aridad (first tokens)) " dsdasdsda ") ;homero
   ;(prn "aridad token 2 "    (aridad (second tokens)) " dsdasdsda ") ;homero
   (try
@@ -542,7 +543,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn evaluar [sentencia amb]
   (prn " Ingresa a evaluar " sentencia  " -*-*-*- ") ;homero
-  (prn " Con ambiente: " amb " *-*-*" )                     ;homero
+  ;(prn " Con ambiente: " amb " *-*-*" )                     ;homero
   ;(print "type segunda sentencia: " (type (second sentencia))  "  fin type ") ;homero
   (if (or (contains? (set sentencia) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
     (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
@@ -621,11 +622,12 @@
              (retornar-al-for amb (fnext sentencia))
              (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
       ;DATA (extraer-data sentencia)
-      READ (leer-data (second sentencia) amb)            ;agregado Florencia
-      RESTORE (assoc amb 5 0)                            ;agregado Florencia
+      READ (leer-data (rest sentencia) amb)            ;agregado Florencia
+      RESTORE [:sin-errores (assoc amb 5 0)]                     ;agregado Florencia
       CLEAR (assoc amb 6 {})                             ;agregado Florencia
       LET (evaluar (drop 1 sentencia) amb)               ;agregado Florencia
       LIST (mostrar-listado (first amb))                 ;agregado Florencia
+      END [nil amb]                                       ;agregado Florencia
       (if (= (second sentencia) '=)
         (let [resu (ejecutar-asignacion sentencia amb)]
           (if (nil? resu)
@@ -649,10 +651,10 @@
        LEN (count operando)
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error
-       SIN (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero (Math/sin operando))) ;agregado Florencia
-       ATN (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero (Math/atan operando))) ;agregado Florencia
+       SIN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/sin operando)) ;agregado Florencia
+       ATN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/atan operando)) ;agregado Florencia ;(prn "entra a ATN " operando "---- con tipo--->" (type operando))  homero
        INT (if (not (number? operando)) (dar-error 163 nro-linea) (int operando)) ;agregado Florencia
-       ASC (if (not (number? operando)) (dar-error 163 nro-linea) (int (first operando))) ;agregado Florencia
+       ASC (if (not (string? operando)) (dar-error 163 nro-linea) (int (first operando))) ;agregado Florencia
        )))
   ([operador operando1 operando2 nro-linea]
    (if (or (nil? operando1) (nil? operando2))
@@ -678,12 +680,13 @@
          >= (if (or (not (number? operando1)) (not (number? operando2))) (dar-error 163 nro-linea) (if (>= operando1 operando2) 1 0)) ;agregada Florencia
          < (if (or (not (number? operando1)) (not (number? operando2))) (dar-error 163 nro-linea) (if (< operando1 operando2) 1 0)) ;agregada Florencia
          <= (if (or (not (number? operando1)) (not (number? operando2))) (dar-error 163 nro-linea) (if (<= operando1 operando2) 1 0)) ;agregada Florencia
-         <> (if (or (not (number? operando1)) (not (number? operando2))) (dar-error 163 nro-linea) (if (not= operando1 operando2) 1 0)) ;agregada Florencia
+         <> (if (not= operando1 operando2) 1 0)       ;agregada Florencia
          ))))
   ([operador operando1 operando2 operando3 nro-linea]
    (if (or (nil? operando1) (nil? operando2) (nil? operando3)) (dar-error 16 nro-linea)  ; Syntax error
                                                                (case operador
                                                                  MID3$ (let [tam (count operando1), ini (dec operando2), fin (+ (dec operando2) operando3)]
+                                                                         (prn "tamañoo mid3: " tam " .... " " ini mid3 " ini " fin " fin " >>>>>>" ) ;homero
                                                                          (cond
                                                                            (or (< operando2 1) (< operando3 0)) (dar-error 53 nro-linea)  ; Illegal quantity error
                                                                            (>= ini tam) ""
@@ -1291,7 +1294,20 @@
 ; "-.5"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn eliminar-cero-entero [n]
-  (prn " Entrada a eliminar-cero-entero: " n " '''''''''' ")  ;homero
+  ;(prn " Entrada a eliminar-cero-entero: " n " '''''''''' ")  ;homero
+  ;(prn " ---> Salida eliminar-cero-entero --> "   (if (nil? n)
+  ;                                                  nil
+  ;                                                  (cond
+  ;                                                    ;(nil? n) nil
+  ;                                                    (string? n) n
+  ;                                                    (and (symbol? n) (or (variable-float? n) (variable-string? n) (variable-integer? n))) n
+  ;                                                    (= n 0) (str n)
+  ;                                                    (and (> n 0) (< n 1)) (apply str (nthrest (seq (str n)) 1))
+  ;                                                    (>= n 1) (str n)
+  ;                                                    (and (neg? n) (> n -1)) (apply str "-" (nthrest (seq (str n)) 2))
+  ;                                                    :else (str n)
+  ;                                                    )
+  ;                                                  ) " <--- " )
   (if (nil? n)
     nil
     (cond
