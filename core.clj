@@ -787,9 +787,11 @@
 ; ((PRINT 1) (NEXT A) (NEXT B))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn expandir-nexts [n]
+  ;(prn "llega a expandir nexts: " n " ------- " )           ;;;homero
   (apply concat (map (fn [x]
                        (cond
                          (not= (first x) 'NEXT) (list x)
+                         (and (= (first x) 'NEXT) (= 1 (count x))) (list x);;lo agregue yo
                          (and (= (first x) 'NEXT) (= (count x) 2)) (list x)
                          (and (= (first x) 'NEXT) (> (count x) 2)) (remove nil? (map
                                                                                   (fn [y]
