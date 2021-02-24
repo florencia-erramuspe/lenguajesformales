@@ -38,6 +38,7 @@
   (is (= (list '(PRINT 1) '(NEXT A) '(NEXT B)) (expandir-nexts (list '(PRINT 1) (list 'NEXT 'A (symbol ",") 'B)))))
   (is (= (list '(PRINT 1)) (expandir-nexts (list '(PRINT 1)))))
   (is (= (list) (expandir-nexts (list))))
+  (is (= (list (list 'NEXT))) (expandir-nexts (list (list 'NEXT))))
   )
 
 (deftest test-variable-float?
@@ -61,6 +62,8 @@
   (is (= false (variable-string? 'X%)))
   (is (= false (variable-string? 'X)))
   (is (= false (variable-string? "X$")))
+  (is (= false (variable-string? 'MID$)))
+  (is (= false (variable-string? 'MID3$)))
   )
 
 (deftest test-contar-sentencias?
@@ -101,6 +104,7 @@
   (is (= '[((10 (PRINT X))) [10 1] [] [] [] 0 {X 5}] (ejecutar-asignacion '(X = 5) ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X 2}])))
   (is (= '[((10 (PRINT X))) [10 1] [] [] [] 0 {X 3}] (ejecutar-asignacion '(X = X + 1) ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X 2}])))
   (is (= '[((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}] (ejecutar-asignacion '(X$ = X$ + " MUNDO") ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X$ "HOLA"}])))
+  (is (= '[((10 (PRINT X))) [10 1] [] [] [] 0 {Z$ "HOLA " X$ "MUNDO"}] (ejecutar-asignacion '(X$ = X$ + "MUNDO") ['((10 (PRINT X))) [10 1] [] [] [] 0 '{Z$ "HOLA "}])))
   )
 
 (deftest test-preprocesar-expresion
@@ -122,10 +126,10 @@
   (is (= 7 (precedencia '-u)))
   (is (= 9 (precedencia 'MID$)))
   (is (= 9 (precedencia 'MID3$)))
-  (is (= 20 (precedencia 10)))
-  (is (= 20 (precedencia "hola")))
-  (is (= 30 (precedencia (symbol "("))))
-  (is (= 30 (precedencia (symbol ")"))))
+  (is (= 9 (precedencia 10)))
+  (is (= 9 (precedencia "hola")))
+  (is (= nil (precedencia (symbol "("))))
+  (is (= nil (precedencia (symbol ")"))))
   )
 
 (deftest test-aridad

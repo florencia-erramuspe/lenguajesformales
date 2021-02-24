@@ -128,12 +128,9 @@
    (let [sentencias-con-nexts-expandidos (expandir-nexts sentencias)]
      (evaluar-linea sentencias-con-nexts-expandidos sentencias-con-nexts-expandidos amb)))
   ([linea sentencias amb]
-   ;(print " sentencias:: " sentencias " fin sentencias ") ;homero
-   ;(print " if empty sentencias:: " (empty? sentencias) " fin emp sent ") ;homero
    (if (empty? sentencias)
      [:sin-errores amb]
      (let [sentencia (anular-invalidos (first sentencias)), par-resul (evaluar sentencia amb)]
-       ;(print " sentencias::: " sentencia " par-resul " par-resul " ########## ") ;homero
        (if (or (nil? (first par-resul)) (contains? #{:omitir-restante, :error-parcial, :for-inconcluso} (first par-resul)))
          (if (and (= (first (amb 1)) :ejecucion-inmediata) (= (first par-resul) :for-inconcluso))
            (recur linea (take-last (second (second (second par-resul))) linea) (second par-resul))
@@ -234,12 +231,10 @@
              (let [variables (if es-cadena (nnext param-actualizados) param-actualizados),
                    valores (butlast (map clojure.string/trim (.split (apply str (.concat (read-line) ",.")) ","))),
                    entradas (map #(let [entr (try (clojure.edn/read-string %) (catch Exception e (str %)))] (if (number? entr) entr (clojure.string/upper-case (str %)))) valores)]
-               ;(print "esto es lo que entro: " entradas " de tipo: " (type entradas)) ;homero
                (if (empty? variables)
                  (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
                  (leer-con-enter variables entradas param-orig param-actualizados amb amb))))))))
   ([variables entradas param-orig param-actualizados amb-orig amb-actualizado]
-   ;(prn "VARIABLES EN LEER CON ENTER: " variables " ENTRADAS EN LEER CON ENTER:" entradas "############")         ;homero
    (cond
      (and (empty? variables) (empty? entradas)) [:sin-errores amb-actualizado]
      (and (empty? variables) (not (empty? entradas))) (do (println "?EXTRA IGNORED") (flush) [:sin-errores amb-actualizado])
@@ -294,14 +289,11 @@
 (defn ejecutar-programa
   ([amb]
    (let [ini [(amb 0) (amb 1) [] [] (vec (extraer-data (amb 0))) 0 {}]]  ; [(prog-mem)  [prog-ptrs]  [gosub-return-stack]  [for-next-stack]  [data-mem]  data-ptr  {var-mem}]
-     ;(print ini ".........." (buscar-lineas-restantes ini) "............") ;;homero
      (ejecutar-programa ini (buscar-lineas-restantes ini))))
   ([amb prg]
    (if (or (nil? prg) (= (first (amb 1)) :ejecucion-inmediata))
      [:sin-errores amb]
      (let [antes (assoc amb 1 [(ffirst prg) (second (amb 1))]), res (evaluar-linea (nfirst prg) antes), nuevo-amb (second res)]
-       ;(print "ejecutar programa " (evaluar-linea (nfirst prg) antes) "+++++++++")                      ;;homero
-       ;(print  prg "******" nuevo-amb)                             ;;;HOMERO
        (cond (nil? (first res)) [nil amb]   ; hubo error total
              (= (first res) :error-parcial) [nil (second res)]   ; hubo error parcial
              :else (let [proximo (if (and (= (first (antes 1)) (first (nuevo-amb 1))) (not= (first res) :for-inconcluso))
@@ -367,14 +359,6 @@
 ; 7
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-expresion [expr amb]
-  ;(prn "ENTRADA A CALCULAR EXPRESION:::: " expr " ::::::::::: ")                   ;HOOMERO
-  ;(prn "Entrada a Preprocesar-exp, expresion " expr " con ambiente : " amb) ;HOMERO
-  ;(prn " Salida Preprocesar-Exp: " (preprocesar-expresion expr amb) " --- ")  ;;homero
-  ;(prn " Salida Desambiguar: " (desambiguar (preprocesar-expresion expr amb)) " --- " ) ;homero
-  ;(prn "Salida shunting-yard: " (shunting-yard (desambiguar (preprocesar-expresion expr amb))) " --- ") ;homero
-
-  ;(prn " TIPO Salida shunting-yard: " (type (shunting-yard (desambiguar (preprocesar-expresion expr amb)))) " --- ") ;homero
-  ;(prn " Salida calcular rpn : " (calcular-rpn (shunting-yard (desambiguar (preprocesar-expresion expr amb))) (amb 1)) "*-*-*-") ;homero
   (calcular-rpn (shunting-yard (desambiguar (preprocesar-expresion expr amb))) (amb 1))
   )
 
@@ -452,9 +436,6 @@
 ; linea indicada
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn calcular-rpn [tokens nro-linea]
-  ;(prn " tokens en calcular rpn: " tokens)                  ;homero
-  ;(prn "aridad token 1 "    (aridad (first tokens)) " dsdasdsda ") ;homero
-  ;(prn "aridad token 2 "    (aridad (second tokens)) " dsdasdsda ") ;homero
   (try
     (let [resu-redu
           (reduce
@@ -543,9 +524,6 @@
 ; actualizado
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn evaluar [sentencia amb]
-  ;(prn " Ingresa a evaluar " sentencia  " -*-*-*- ") ;homero
-  ;(prn " Con ambiente: " (rest amb) " *-*-*" )                     ;homero
-  ;(print "type segunda sentencia: " (type (second sentencia))  "  fin type ") ;homero
   (if (or (contains? (set sentencia) nil) (and (palabra-reservada? (first sentencia)) (= (second sentencia) '=)))
     (do (dar-error 16 (amb 1)) [nil amb])  ; Syntax error
     (case (first sentencia)
@@ -653,12 +631,11 @@
        STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
        CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error
        SIN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/sin operando)) ;agregado Florencia
-       ATN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/atan operando)) ;agregado Florencia ;(prn "entra a ATN " operando "---- con tipo--->" (type operando))  homero
+       ATN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/atan operando)) ;agregado Florencia
        INT (if (not (number? operando)) (dar-error 163 nro-linea) (int operando)) ;agregado Florencia
        ASC (if (not (string? operando)) (dar-error 163 nro-linea) (int (first operando))) ;agregado Florencia
        )))
   ([operador operando1 operando2 nro-linea]
-   ;(prn "a aplicar llega " operador " -- " operando1 " -- " operando2 " -- " nro-linea) ;;homero
    (if (or (nil? operando1) (nil? operando2))
      (dar-error 16 nro-linea)  ; Syntax error
      (if (= operador (symbol "^"))
@@ -688,7 +665,6 @@
    (if (or (nil? operando1) (nil? operando2) (nil? operando3)) (dar-error 16 nro-linea)  ; Syntax error
                                                                (case operador
                                                                  MID3$ (let [tam (count operando1), ini (dec operando2), fin (+ (dec operando2) operando3)]
-                                                                         ;(prn " MID3$: Operando1 " operando1 " .... " " Operando2 " operando2 " Operando3 " operando3 " >>>>>>" ) ;homero
                                                                          (cond
                                                                            (or (< operando2 1) (< operando3 0)) (dar-error 53 nro-linea)  ; Illegal quantity error
                                                                            (>= ini tam) ""
@@ -787,11 +763,10 @@
 ; ((PRINT 1) (NEXT A) (NEXT B))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn expandir-nexts [n]
-  ;(prn "llega a expandir nexts: " n " ------- " )           ;;;homero
   (apply concat (map (fn [x]
                        (cond
                          (not= (first x) 'NEXT) (list x)
-                         (and (= (first x) 'NEXT) (= 1 (count x))) (list x);;lo agregue yo
+                         (and (= (first x) 'NEXT) (= 1 (count x))) (list x)
                          (and (= (first x) 'NEXT) (= (count x) 2)) (list x)
                          (and (= (first x) 'NEXT) (> (count x) 2)) (remove nil? (map
                                                                                   (fn [y]
@@ -879,6 +854,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-string? [x]
   (cond
+    (string? x) false
     (number? x) false
     (palabra-reservada? x) false
     :else (and (> (count (seq (str x))) 1) (= "$" (last (map str (seq (str x))))))
@@ -1021,39 +997,9 @@
 ; user=> (ejecutar-asignacion '(X$ = X$ + " MUNDO") ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X$ "HOLA"}])
 ; [((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;(defn ejecutar-asignacion [sentencia amb]
-;  ;(print (hash-map (symbol (first (first (last amb)))) (calcular-expresion (rest (rest sentencia)) amb)) " ... ")
-;  (if (not (empty? (last amb)))
-;    (print amb)                                   ;;HOMERO [30 [40 1]]
-;    (print (assoc amb 6 (assoc (last amb) (first sentencia) (calcular-expresion (rest (rest sentencia)) amb))) " º ") ;;;homero
-;    )
-;  (cond
-;    (empty? (last amb)) (assoc amb (- (count amb) 1) (hash-map (first sentencia) (nth sentencia (- (count sentencia) 1))))
-;    :else (assoc amb 6 (assoc (last amb) (first sentencia) (calcular-expresion (rest (rest sentencia)) amb)))
-;    ))
-
 (defn ejecutar-asignacion [sentencia amb]
-  ;(prn "Salida calcular expresion:  " (calcular-expresion (rest (rest sentencia)) amb) " ######## ")
   (assoc amb 6 (assoc (last amb) (first sentencia) (calcular-expresion (rest (rest sentencia)) amb)))
-  ) ;homero
-  ; (prn " Salida ejec asignacion : " (assoc amb 6 (assoc (last amb) (first sentencia) (calcular-expresion (rest (rest sentencia)) amb))) " **** ") ;HOMERO
-
-
-
-
-;(defn ejecutar-asignacion [sentencia amb]
-;  (if (empty? (last amb))
-;    (assoc amb 6 (array-map (first sentencia) (last sentencia)))
-;    (assoc amb 6 (assoc (last amb) (first sentencia) (calcular-expresion (rest (rest sentencia)) amb)))
-;    ))
-
-;(defn ejecutar-asignacion [sentencia amb]
-;    (cond
-;    (empty? (last amb)) (assoc amb (- (count amb) 1)  (hash-map (first sentencia) (nth sentencia (- (count sentencia) 1))))
-;    :else amb
-;    ;(assoc amb 6 (assoc (last amb) (first sentencia) (calcular-expresion (rest (rest sentencia)) amb)))
-;    )
-;  )
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; preprocesar-expresion: recibe una expresion y la retorna con
@@ -1065,12 +1011,10 @@
 ; (5 + 0 / 2 * 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn preprocesar-expresion [expr amb]
-  ;(prn "ENTRADA A PREPROCESAR: " expr "¿'¿'¿'¿'¿'") ;homero
   (if (nil? (first expr))
-    nil                                                     ;;con esto parece que funciono
+    nil
   (map (fn [x]
          (cond
-           ;(nil? expr) nil                                  ;;probando homero
            (palabra-reservada? x) x
            (operador? x) x
            (contains? (last amb) x) (get (last amb) x)
@@ -1096,8 +1040,7 @@
 ; (MID3$ ( 1 , -u 2 + K , 3 ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn desambiguar [expr]
-  ;(desambiguar-mas-menos (desambiguar-mid (desambiguar-comas expr))) ;homero
-  (desambiguar-comas (desambiguar-mas-menos (desambiguar-mid expr)))
+  (desambiguar-mas-menos (desambiguar-mid expr))
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1114,30 +1057,7 @@
 ; user=> (precedencia 'MID$)
 ; 9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;(defn precedencia [token]
-;  (cond
-;    (= 'OR token) 1
-;    (= 'AND token) 2
-;    (= 'NOT token) 3
-;    (or (= '= token) (= '<> token) (= '< token) (= '<= token) (= '> token) (= '>= token)) 4
-;    (= '+ token) 5
-;    (= '- token) 5
-;    (= '* token) 6
-;    (= '/ token) 6
-;    (= '-u token) 7
-;    (= (symbol "^") token) 8
-;    (= 'MID$ token) 9
-;    (= 'MID3$ token) 9
-;    (palabra-reservada? token) 9
-;    ;(or (number? token) (string? token)) 20
-;    (number? token) 9
-;    (string? token) 9
-;    (= (symbol "(") token) nil ;;esto esta bien?
-;    (= (symbol ")") token) nil
-;    )
-;  )
-
-(defn precedencia [token] ;homero
+(defn precedencia [token]
   (cond
     (= 'OR token) 1
     (= 'AND token) 2
@@ -1159,7 +1079,7 @@
     (string? token) 9
     (= (symbol "(") token) nil
     (= (symbol ")") token) nil
-    :else 0 ;; sino existe la tomo como la más baja para que no la tenga en cuenta
+    :else 0
     )
   )
 
@@ -1177,30 +1097,7 @@
 ; user=> (aridad 'MID3$)
 ; 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;(defn aridad [token]
-;  (cond
-;    (number? token) 0
-;    (string? token) 0
-;    (= 'ATN token) 1
-;    (= 'INT token) 1
-;    (= 'SIN token) 1
-;    (= 'LEN token) 1
-;    (= 'MID$ token) 2
-;    (= 'MID3$ token) 3
-;    (= 'ASC token) 1
-;    (= 'CHR$ token) 1
-;    (= 'STR$ token) 1
-;    (= 'AND token) 2
-;    (= 'OR token) 2
-;    (= 'LOAD token) 1
-;    (= 'SAVE token) 1
-;    (= 'LIST token) 0
-;    (operador? token) 2
-;    (palabra-reservada? token) 0
-;    )
-;  )
-
-(defn aridad [token]                                        ;;homero probando esta aridad
+(defn aridad [token]
   (cond
     (= 'LOAD token) 1
     (= 'SAVE token) 1
@@ -1223,7 +1120,7 @@
     (= 'RETURN token) 0
     (= 'GOTO token) 1
     (= 'IF token) 1
-    (= 'THEN token) 1
+    (= 'THEN token) 0
     (= 'ON token) 1
     (= 'ENV token) 0
     (= 'EXIT token) 0
@@ -1240,72 +1137,12 @@
     (= (symbol "^") token) 2
     (= 'AND token) 2
     (= 'OR token) 2
-    ;(= 'NOT token) 1
     (operador? token) 2
     (number? token) 0
     (string? token) 0
     :else 0
     )
   )
-
-;(defn aridad [token]
-;  (cond
-;    (= 'OR token) 2
-;    (= 'AND token) 2
-;    (= 'NOT token) 1
-;    (= '-u token) 1
-;    (= (symbol "^") token) 2
-;    (= 'LOAD token) 1
-;    (= 'SAVE token) 1
-;    (= 'INPUT token) 0
-;    (= 'PRINT token) 1
-;    (= 'DATA token) 0
-;    (= 'READ token) 0
-;    (= 'REM token) 1
-;    (= 'LET token) 1
-;    (= 'AND token) 2
-;    (= 'CLEAR token) 0
-;    (= 'OR token) 2
-;    (= 'RESTORE token) 0
-;    (= 'NEW token) 0
-;    (= 'RUN token) 0
-;    (= 'END token) 0
-;    (= 'FOR token) 0
-;    (= 'TO token) 0
-;    (= 'NEXT token) 0
-;    (= 'STEP token) 0
-;    (= 'GOSUB token) 1
-;    (= 'RETURN token) 0
-;    (= 'GOTO token) 1
-;    (= 'IF token) 1
-;    (= 'THEN token) 1
-;    (= 'ON token) 1
-;    (= 'ENV token) 0
-;    (= 'EXIT token) 0
-;    (= 'ATN token) 1
-;    (= 'INT token) 1
-;    (= 'SIN token) 1
-;    (= 'LEN token) 1
-;    (= 'MID$ token) 2
-;    (= 'MID3$ token) 3
-;    (= 'ASC token) 1
-;    (= 'CHR$ token) 1
-;    (= 'STR$ token) 1
-;    (= 'LEN token) 1
-;    (operador? token) 2
-;    (number? token) 0
-;    (string? token) 0
-;    :else 0 ;; sino existe la tomo como la más baja para que no la tenga en cuenta
-;    )
-;  )
-
-
-;(defn palabra-reservada? [x]
-;  (contains?  #{'LOAD 'SAVE 'INPUT 'PRINT '? 'DATA 'READ 'REM 'RESTORE 'CLEAR 'LET
-;                'LIST 'NEW 'RUN 'END 'FOR 'TO 'NEXT 'STEP 'GOSUB 'RETURN 'GOTO 'IF
-;                'THEN 'ON 'ENV 'EXIT 'ATN 'INT 'SIN 'LEN 'MID$ 'MID3$ 'ASC 'CHR$ 'STR$ 'AND 'OR} x)
-;  )
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-decimal: recibe un numero y lo retorna sin ceros
@@ -1327,7 +1164,7 @@
     (integer? n) n
     (= 0.0 (- n (int n))) (int n)
     :else (read-string (str n))
-    )         ;no funciona el caso 1.0
+    )
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1354,26 +1191,12 @@
 ; "-.5"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn eliminar-cero-entero [n]
-  ;(prn " Entrada a eliminar-cero-entero: " n " '''''''''' ")  ;homero
-  ;(prn " ---> Salida eliminar-cero-entero --> "   (if (nil? n)
-  ;                                                  nil
-  ;                                                  (cond
-  ;                                                    ;(nil? n) nil
-  ;                                                    (string? n) n
-  ;                                                    (and (symbol? n) (or (variable-float? n) (variable-string? n) (variable-integer? n))) n
-  ;                                                    (= n 0) (str n)
-  ;                                                    (and (> n 0) (< n 1)) (apply str (nthrest (seq (str n)) 1))
-  ;                                                    (>= n 1) (str n)
-  ;                                                    (and (neg? n) (> n -1)) (apply str "-" (nthrest (seq (str n)) 2))
-  ;                                                    :else (str n)
-  ;                                                    )
-  ;                                                  ) " <--- " )
   (if (nil? n)
     nil
     (cond
-      ;(nil? n) nil
       (string? n) n
-      (and (symbol? n) (or (variable-float? n) (variable-string? n) (variable-integer? n))) n
+      ;(and (symbol? n) (or (variable-float? n) (variable-string? n) (variable-integer? n))) n
+      (symbol? n) (str n)
       (= n 0) (str n)
       (and (> n 0) (< n 1)) (apply str (nthrest (seq (str n)) 1))
       (>= n 1) (str n)
