@@ -1196,7 +1196,6 @@
     nil
     (cond
       (string? n) n
-      ;(and (symbol? n) (or (variable-float? n) (variable-string? n) (variable-integer? n))) n
       (symbol? n) (str n)
       (= n 0) (str n)
       (and (> n 0) (< n 1)) (apply str (nthrest (seq (str n)) 1))
