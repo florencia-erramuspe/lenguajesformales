@@ -1,5 +1,3 @@
-;(ns next-proj.core)
-
 ; https://porkrind.org/a2
 ; https://www.calormen.com/jsbasic
 ; https://www.scullinsteel.com/apple2/
@@ -600,13 +598,12 @@
       NEXT (if (<= (count (next sentencia)) 1)
              (retornar-al-for amb (fnext sentencia))
              (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
-      ;DATA (extraer-data sentencia)
-      READ (leer-data (rest sentencia) amb)            ;agregado Florencia
+      READ (leer-data (rest sentencia) amb)                      ;agregado Florencia
       RESTORE [:sin-errores (assoc amb 5 0)]                     ;agregado Florencia
-      CLEAR (assoc amb 6 {})                             ;agregado Florencia
-      LET (evaluar (drop 1 sentencia) amb)               ;agregado Florencia
-      LIST (mostrar-listado (first amb))                 ;agregado Florencia
-      END [nil amb]                                       ;agregado Florencia
+      CLEAR [:sin-errores (assoc amb 6 {}) ]                     ;agregado Florencia
+      LET (evaluar (drop 1 sentencia) amb)                       ;agregado Florencia
+      LIST (do (mostrar-listado (first amb)) (flush) [:sin-errores amb]) ;agregado Florencia
+      END [nil amb]                                               ;agregado Florencia
       (if (= (second sentencia) '=)
         (let [resu (ejecutar-asignacion sentencia amb)]
           (if (nil? resu)
@@ -952,7 +949,7 @@
 
 (defn continuar-linea [amb]
   (cond
-    (empty? (nth amb 2)) (mostrar-error-gosub amb)  ;;no lo muestra bien
+    (empty? (nth amb 2)) (mostrar-error-gosub amb)
     :else [:omitir-restante (aux-actualizar-amb amb)]
     )
   )
@@ -966,23 +963,27 @@
 ; user=> (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))
 ; ("HOLA" "MUNDO" 10 20)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn aux-extraer-data-linea [linea]
-  (remove nil? (if (= 'DATA (first (first (rest linea))))
+  (remove nil? (if (= 'DATA (first (rest linea)))
                  (map (fn [x]
                         (cond
-                          (and (symbol? x) (distinct? (symbol ",") x)) (str x)
+                          (and (symbol? x) (distinct? (symbol ",") x) (not= 'DATA x)) (str x)
                           (number? x) x)
                         )
-                      (rest (first (rest linea))) )
-                 ))
-  )
+                      (rest (rest linea)))
+                 )))
 
 (defn extraer-data [prg]
   (cond
     (empty? prg) (list)
     :else
-    (apply concat (map #(aux-extraer-data-linea %1) prg )))
+    (apply concat (map #(aux-extraer-data-linea %1)
+                       (map (fn [x]
+                              (take-while #(not= 'REM %) (flatten x))
+                              ) prg))))
   )
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; ejecutar-asignacion: recibe una asignacion y un ambiente, y

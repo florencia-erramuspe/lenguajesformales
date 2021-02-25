@@ -23,22 +23,29 @@
   (is (= true (operador? 'OR)))
   )
 
-(deftest test-anular-invalidos?
+(deftest test-anular-invalidos
   (is (= '(IF X nil * Y < 12 THEN LET nil X = 0) (anular-invalidos '(IF X & * Y < 12 THEN LET ! X = 0)) ))
   )
 
-(deftest test-cargar-linea?
+(deftest test-cargar-linea
   (is (= '[((10 (PRINT X))) [:ejecucion-inmediata 0] [] [] [] 0 {}] (cargar-linea '(10 (PRINT X)) [() [:ejecucion-inmediata 0] [] [] [] 0 {}])))
   (is (= '[((10 (PRINT X)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}] (cargar-linea '(20 (X = 100)) ['((10 (PRINT X))) [:ejecucion-inmediata 0] [] [] [] 0 {}])))
   (is (= '[((10 (PRINT X)) (15 (X = X + 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}] (cargar-linea '(15 (X = X + 1)) ['((10 (PRINT X)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}])))
   (is (= '[((10 (PRINT X)) (15 (X = X - 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}] (cargar-linea '(15 (X = X - 1)) ['((10 (PRINT X)) (15 (X = X + 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}])))
   )
 
-(deftest test-expandir-nexts?
+(deftest test-expandir-nexts
   (is (= (list '(PRINT 1) '(NEXT A) '(NEXT B)) (expandir-nexts (list '(PRINT 1) (list 'NEXT 'A (symbol ",") 'B)))))
   (is (= (list '(PRINT 1)) (expandir-nexts (list '(PRINT 1)))))
   (is (= (list) (expandir-nexts (list))))
   (is (= (list (list 'NEXT))) (expandir-nexts (list (list 'NEXT))))
+  )
+
+(deftest test-dar-error
+  (is (= nil (dar-error 16 [:ejecucion-inmediata 4])))
+  (is (= nil (dar-error "?ERROR DISK FULL" [:ejecucion-inmediata 4])))
+  (is (= nil (dar-error 16 [100 3])))
+  (is (= nil (dar-error "?ERROR DISK FULL" [100 3])))
   )
 
 (deftest test-variable-float?
@@ -66,14 +73,14 @@
   (is (= false (variable-string? 'MID3$)))
   )
 
-(deftest test-contar-sentencias?
+(deftest test-contar-sentencias
   (is (= 2 (contar-sentencias 10 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
   (is (= 1 (contar-sentencias 15 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
   (is (= 2 (contar-sentencias 20 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
   (is (= 0 (contar-sentencias 28 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
   )
 
-(deftest test-buscar-lineas-restantes?
+(deftest test-buscar-lineas-restantes
   (is (= nil (buscar-lineas-restantes [() [:ejecucion-inmediata 0] [] [] [] 0 {}])))
   (is (= nil (buscar-lineas-restantes ['((PRINT X) (PRINT Y)) [:ejecucion-inmediata 2] [] [] [] 0 {}])))
   (is (= (list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 2] [] [] [] 0 {}])))
@@ -89,7 +96,7 @@
   (is (= nil (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [25 0] [] [] [] 0 {}])))
   )
 
-(deftest test-continuar-linea?
+(deftest test-continuar-linea
   ;(is (= [nil (list '(10 (PRINT X)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [] [] [] 0 {}] (continuar-linea [(list '(10 (PRINT X)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [] [] [] 0 {}])))
   (is (= [:omitir-restante [(list '(10 (PRINT X)) '(15 (GOSUB 100) (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [15 1] [] [] [] 0 {}]] (continuar-linea [(list '(10 (PRINT X)) '(15 (GOSUB 100) (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [[15 2]] [] [] 0 {}])))
   )
@@ -97,6 +104,8 @@
 (deftest test-extraer-data
   (is (= (list) (extraer-data '(()))))
   (is (= (list "HOLA" "MUNDO" 10 20) (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))))
+  (is (= (list "YANKEE" "ZULU" (extraer-data (list (list 10 '(DATA YANKEE) '(DATA ZULU ) '(REM EL ULTIMO VALOR ES ZULU)))))))
+  (is (= (list "YANKEE" "ZULU" "HOLA" "MUNDO") (extraer-data (list (list 1030 '(DATA YANKEE) '(DATA ZULU ) '(REM EL ULTIMO VALOR ES ZULU)) (list 1040 '(DATA HOLA MUNDO))))))
   )
 
 (deftest test-ejecutar-asignacion
